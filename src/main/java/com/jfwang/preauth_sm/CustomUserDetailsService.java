@@ -7,6 +7,7 @@ import java.util.Collection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,8 +27,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 		 */
 		if (username == null) username = "anonymous";
 		Collection<GrantedAuthority> authorities = new ArrayList<>();		
- 	   	authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-		UserDetails details = new org.springframework.security.core.userdetails.User(username, "", authorities);
+ 	   	authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+		UserDetails details = new User(username, "", authorities);
 		return details;	
 	}
 

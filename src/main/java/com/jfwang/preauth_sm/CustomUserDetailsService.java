@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 /*
  * change this implementation to get user information from database, LDAP, etc
  */
-@Service
+// @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
 
@@ -27,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 		 */
 		if (username == null) username = "anonymous";
 		Collection<GrantedAuthority> authorities = new ArrayList<>();		
- 	   	authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+ 	   	authorities.add(new SimpleGrantedAuthority("USER"));
 		UserDetails details = new User(username, "", authorities);
 		return details;	
 	}

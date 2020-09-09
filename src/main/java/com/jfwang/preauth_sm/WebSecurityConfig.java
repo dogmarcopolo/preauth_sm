@@ -1,6 +1,7 @@
 package com.jfwang.preauth_sm;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,11 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsByNameServiceWrapper;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
@@ -31,13 +36,18 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		http.addFilterAfter(siteminderFilter(), RequestHeaderAuthenticationFilter.class)
 			.authorizeRequests()
 			.antMatchers("/", "/Token").permitAll()
-			.antMatchers("/admin/**").hasRole("ADMIN")
-			.antMatchers("/user/**").hasRole("USER")
-			.antMatchers("/both/**").hasAnyRole("USER", "ADMIN")
+			.antMatchers("/admin/**").hasAuthority("ADMIN")
+			.antMatchers("/user/**").hasAuthority("USER")
+			.antMatchers("/both/**").hasAnyAuthority("USER", "ADMIN")
 			.anyRequest().authenticated()
 			.and()
-				.oauth2Login().userInfoEndpoint();
-		// .oidcUserService(oidcUserService);
+			// for testing
+	  		.formLogin().permitAll() 
+	  		.and() 
+	  		.logout().permitAll();
+		    /* uncomment to use oauth2 
+		    .oauth2Login().userInfoEndpoint();
+			*/
 	}
 
 	
@@ -48,19 +58,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Bean(name = "siteminderFilter")
 	public RequestHeaderAuthenticationFilter siteminderFilter() throws Exception {
 		RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter = new RequestHeaderAuthenticationFilter();
+		// for UBS it is x-auth-uids
 		requestHeaderAuthenticationFilter.setPrincipalRequestHeader("SM_USER");
+		// set to true if anomyous login is not allowed
 		requestHeaderAuthenticationFilter.setExceptionIfHeaderMissing(false);
 		requestHeaderAuthenticationFilter.setAuthenticationManager(authenticationManager());
 		return requestHeaderAuthenticationFilter;
 	}
-
-	@Bean
-	@Override
-	protected AuthenticationManager authenticationManager() throws Exception {
-		final List<AuthenticationProvider> providers = new ArrayList<>(1);
-		providers.add(preauthAuthProvider());
-		return new ProviderManager(providers);
-	}
+	
+	/*
+	 * comment out for testing - still not sure why
 
 	@Bean(name = "preAuthProvider")
 	PreAuthenticatedAuthenticationProvider preauthAuthProvider() throws Exception {
@@ -68,47 +75,30 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		provider.setPreAuthenticatedUserDetailsService(userDetailsServiceWrapper());
 		return provider;
 	}
-
-	// for user/password, need to creat a wrapper, autowired will break the authentication chain!
-	@Autowired
-	private CustomUserDetailsService customUserDetailsService;
+	*/
 
 	@Bean
 	UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> userDetailsServiceWrapper() throws Exception {
 		UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> wrapper = new UserDetailsByNameServiceWrapper<>();
-		wrapper.setUserDetailsService(customUserDetailsService);
+		wrapper.setUserDetailsService(new CustomUserDetailsService());
 		return wrapper;
 	}
 
-/*
- * for testing purpose user/password authentication
- */
-
 	/*
-	  @Override 
-	  protected void configure(HttpSecurity http) throws Exception { 
-	  	http
-	  		.addFilterAfter(siteminderFilter(), RequestHeaderAuthenticationFilter.class)
-	  		.authorizeRequests()
-	  		.antMatchers("/", "/Token").permitAll()
-	  		.antMatchers("/admin/**").hasAuthority("ADMIN")
-	  		.antMatchers("/user/**").hasAuthority("USER")
-	  		.antMatchers("/both/**").hasAuthority("USER") 
-	  		.anyRequest().authenticated()
-	  	.and()
-	  		.formLogin().permitAll() 
-	  		//.loginPage("/login") 
-	  	.and() 
-	  		.logout().permitAll();
-	   }
+	 * for testing purpose user/password authentication
+	 */
 
 	 	@Bean
 	  	@Override 
 	  	public UserDetailsService userDetailsService() { 
+	 		Collection<UserDetails> users = new ArrayList<>();
 	  		UserDetails user = User.withDefaultPasswordEncoder() 
-	  			.username("user") .password("password")
-				.authorities("USER") .build();
-			return new InMemoryUserDetailsManager(user); 
+	  			.username("user") .password("user").authorities("USER") .build();
+	  		users.add(user);
+	  		user = User.withDefaultPasswordEncoder() 
+		  			.username("admin") .password("admin").authorities("ADMIN") .build();
+	  		users.add(user);
+			return new InMemoryUserDetailsManager(users); 
 		}
-	 */
+
 }

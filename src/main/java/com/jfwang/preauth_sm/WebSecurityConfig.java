@@ -1,23 +1,12 @@
 package com.jfwang.preauth_sm;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsByNameServiceWrapper;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
@@ -66,16 +55,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		return requestHeaderAuthenticationFilter;
 	}
 	
-	/*
-	 * comment out for testing - still not sure why
-
 	@Bean(name = "preAuthProvider")
 	PreAuthenticatedAuthenticationProvider preauthAuthProvider() throws Exception {
 		PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
 		provider.setPreAuthenticatedUserDetailsService(userDetailsServiceWrapper());
 		return provider;
 	}
-	*/
+ 
 
 	@Bean
 	UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> userDetailsServiceWrapper() throws Exception {
@@ -84,21 +70,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		return wrapper;
 	}
 
-	/*
-	 * for testing purpose user/password authentication
+
+	/* 
+	 * uncomment for local testing
 	 */
 
-	 	@Bean
-	  	@Override 
-	  	public UserDetailsService userDetailsService() { 
-	 		Collection<UserDetails> users = new ArrayList<>();
-	  		UserDetails user = User.withDefaultPasswordEncoder() 
-	  			.username("user") .password("user").authorities("USER") .build();
-	  		users.add(user);
-	  		user = User.withDefaultPasswordEncoder() 
-		  			.username("admin") .password("admin").authorities("ADMIN") .build();
-	  		users.add(user);
-			return new InMemoryUserDetailsManager(users); 
-		}
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth.inMemoryAuthentication()
+			.withUser("user").password("{noop}user").authorities("USER")
+			.and()
+			.withUser("admin").password("{noop}admin").authorities("ADMIN");
+	}
 
 }
